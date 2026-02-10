@@ -1,0 +1,34 @@
+{
+  "name": "hamstajs",
+  "version": "0.1.0",
+  "description": "Sprinkle some reactivity and put your HTML on the wheel.",
+  "type": "module",
+  "main": "dist/hamsta.esm.js",
+  "exports": {
+    "import": "./dist/hamsta.esm.js"
+  },
+  "files": [
+    "dist/hamsta.esm.js",
+    "dist/hamsta.min.js"
+  ],
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "homepage": "https://github.com/BoBch27/hamstajs#readme",
+  "bugs": {
+    "url": "https://github.com/BoBch27/hamstajs/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BoBch27/hamstajs.git"
+  },
+  "license": "MIT",
+  "author": "Bobby Donev <hello@bobbydonev.com>",
+  "keywords": [
+    "alpinejs",
+    "solidjs",
+    "signals",
+    "vanilla-js",
+    "reactivity"
+  ]
+}
