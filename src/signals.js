@@ -9,14 +9,23 @@ export function createSignal(value) {
 	const getter = () => {
 		if (currentEffect) {
 			subscribers.add(currentEffect);
+
+			currentEffect.dependencies.add(() => {
+				subscribers.delete(currentEffect);
+			});
 		}
 
 		return value;
 	};
 
 	const setter = (newValue) => {
+		// skip update if value hasn't changed
+		if (Object.is(value, newValue)) {
+			return;
+		}
+
 		value = newValue;
-		subscribers.forEach(fn => fn());
+		subscribers.forEach(effect => effect());
 	};
 
 	return [getter, setter];
@@ -25,10 +34,15 @@ export function createSignal(value) {
 // Run passed in func every time signal inside it changes
 export function createEffect(fn) {
 	const effect = () => {
+		// clear old dependencies
+		effect.dependencies.forEach(cleanup => cleanup());
+		effect.dependencies.clear();
+
 		currentEffect = effect;
 		fn();
 		currentEffect = null;
 	};
 
+	effect.dependencies = new Set();
 	effect();
 };
