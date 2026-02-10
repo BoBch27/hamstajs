@@ -1,4 +1,5 @@
 import { context } from 'esbuild';
+import { exec } from 'child_process';
 
 const isDev = process.argv.includes('--watch');
 
@@ -37,3 +38,14 @@ await buildOrWatch({
 	outfile: 'dist/hamsta.esm.js',
 	format: 'esm',
 }, 'ESM');
+
+// launch live server if dev
+if (isDev) {
+	exec('npx live-server ./ --port=3000 --open=test/index.html', (err, stdout, stderr) => {
+		if (err) {
+			console.error(`🚨 live-server error: ${stderr}`);
+		} else {
+			console.log(stdout);
+		}
+	});
+}
