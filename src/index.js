@@ -18,8 +18,8 @@ const scriptTag = document.currentScript;
 if (typeof document !== 'undefined' && scriptTag && !scriptTag.hasAttribute('disable-auto-init')) {
 	const autoInit = () => {
 		if (document.body) {
-			console.log('🐹 hamsta.js auto-initialised');
 			directives.init();
+			document.dispatchEvent(new CustomEvent('hamsta:ready'));
 		}
 	};
 
