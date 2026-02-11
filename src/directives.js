@@ -63,8 +63,10 @@ function bindDirectives(root) {
 					el.textContent = fn(signals, el) ?? '';
 				});
 			} else if (attr.name === 'h-show') {
+				const originalDispaly = el.style.display;
+
 				createEffect(() => {
-					el.style.display = fn(signals, el) ? 'block' : 'none';
+					el.style.display = fn(signals, el) ? (originalDispaly || '') : 'none';
 				});
 			}
 		}
