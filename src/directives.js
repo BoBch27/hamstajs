@@ -62,6 +62,10 @@ function bindDirectives(root) {
 				createEffect(() => {
 					el.textContent = fn(signals, el) ?? '';
 				});
+			} else if (attr.name === 'h-show') {
+				createEffect(() => {
+					el.style.display = fn(signals, el) ? 'block' : 'none';
+				});
 			}
 		}
 	});
