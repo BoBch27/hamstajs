@@ -1,6 +1,6 @@
 import { createSignal } from "./signals";
 
-const signals = {};
+export const signals = {};
 
 export function init(root = document.body) {
 	root.querySelectorAll('[h-signals]').forEach(el => {
@@ -26,7 +26,13 @@ export function init(root = document.body) {
 			}
 
 			const [get, set] = createSignal(data[key]);
-			signals[key] = { get, set };
+
+			Object.defineProperty(signals, key, {
+				get() { return get(); },
+				set(val) { set(val); },
+				enumerable: true,
+				configurable: true  // so signals can be overwritten
+			});
 		});
 	});
 };
