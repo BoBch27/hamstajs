@@ -5,18 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Test Document</title>
-    <!-- <script src="../dist/hamsta.min.js"></script> -->
+    <script src="../dist/hamsta.min.js" defer></script>
 </head>
 
 <body>
-    <div>This is a file to test hamsta</div>
-
-    <script type="module">
-        import { createSignal } from "../dist/hamsta.esm.js"
-
-        const [count, setCount] = createSignal(0);
-        console.log(count());
-    </script>
+    <div h-show="s.count > 3">This is a file to test hamsta</div>
+    <div h-signals="{ count: 0 }" h-text="s.count"></div>
+    <button h-onclick="s.count++">+</button>
 </body>
 
 </html>
