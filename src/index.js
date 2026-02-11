@@ -13,3 +13,18 @@ export default api;
 // (e.g. import { createSignal } from 'hamstajs')
 export * from "./signals.js";
 export * from "./directives.js";
+
+if (typeof document !== 'undefined') {
+	const autoInit = () => {
+		if (document.body) {
+			console.log('🐹 hamsta.js auto-initialised');
+			directives.init();
+		}
+	};
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', autoInit);
+	} else {
+		autoInit();
+	}
+}
