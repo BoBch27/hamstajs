@@ -1,4 +1,4 @@
-import { createSignal } from "./signals";
+import { createSignal, createEffect } from "./signals";
 
 export const signals = {};
 
@@ -34,5 +34,26 @@ export function init(root = document.body) {
 				configurable: true  // so signals can be overwritten
 			});
 		});
+	});
+
+	bindDirectives(root);
+};
+
+function bindDirectives(root) {
+	root.querySelectorAll('*').forEach(el => {
+		for (const attr of el.attributes) {
+			if (!attr.name.startsWith(`h-`)) {
+				continue;
+			}
+
+			const code = attr.value;
+			const fn = new Function('s', 'el', `return (${code})`);
+
+			if (attr.name === 'h-text') {
+				createEffect(() => {
+					el.textContent = fn(signals, el) ?? '';
+				});
+			}
+		}
 	});
 };
