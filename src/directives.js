@@ -14,14 +14,14 @@ export function init(root = document.body) {
 				data = fn();
 			}
 		} catch (e) {
-			console.error('[🐹 h-signals] Parse error: ', e);
+			console.error('🐹 [h-signals] Parse error: ', e);
 			return;
 		}
 
 		// create signals for each property
 		Object.keys(data).forEach(key => {
 			if (signals[key]) {
-				console.warn(`[🐹 h-signals] Signal "${key}" already exists (current: ${signals[key]}). Skipping.`);
+				console.warn(`🐹 [h-signals] "${key}" already exists (current: ${signals[key]}). Skipping.`);
 				return;
 			}
 
@@ -63,10 +63,10 @@ function bindDirectives(root) {
 					el.textContent = fn(signals, el) ?? '';
 				});
 			} else if (attr.name === 'h-show') {
-				const originalDispaly = el.style.display;
+				const originalDisplay = el.style.display;
 
 				createEffect(() => {
-					el.style.display = fn(signals, el) ? (originalDispaly || '') : 'none';
+					el.style.display = fn(signals, el) ? (originalDisplay || '') : 'none';
 				});
 			}
 		}
