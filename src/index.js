@@ -14,7 +14,8 @@ export default api;
 export * from "./signals.js";
 export * from "./directives.js";
 
-if (typeof document !== 'undefined') {
+const scriptTag = document.currentScript;
+if (typeof document !== 'undefined' && scriptTag && !scriptTag.hasAttribute('disable-auto-init')) {
 	const autoInit = () => {
 		if (document.body) {
 			console.log('🐹 hamsta.js auto-initialised');
@@ -28,3 +29,4 @@ if (typeof document !== 'undefined') {
 		autoInit();
 	}
 }
+
