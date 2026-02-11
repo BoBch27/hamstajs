@@ -47,6 +47,15 @@ function bindDirectives(root) {
 			}
 
 			const code = attr.value;
+
+			if (attr.name.startsWith('h-on')) {
+				const [_, eventName] = attr.name.split('h-on');
+				const fn = new Function('event', 's', 'el', code);
+
+				el.addEventListener(eventName, (e) => fn(e, signals, el));
+				continue;
+			}
+
 			const fn = new Function('s', 'el', `return (${code})`);
 
 			if (attr.name === 'h-text') {
