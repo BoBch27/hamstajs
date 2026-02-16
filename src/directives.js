@@ -106,6 +106,23 @@ function bindDirectives(root) {
 						el.style.setProperty(cssProp, String(val));
 					});
 				});
+			} else {
+				createEffect(() => {
+					const [_, attrName] = attr.name.split('h-');
+					const value = fn(signals, el);
+
+					if (typeof value === 'boolean') {
+						if (value) {
+							el.setAttribute(attrName, '');
+						} else {
+							el.removeAttribute(attrName);
+						}
+					} else if (value == null) {
+						el.removeAttribute(attrName);
+					} else {
+						el.setAttribute(attrName, value);
+					}
+				});
 			}
 		}
 	});
