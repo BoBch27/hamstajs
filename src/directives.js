@@ -83,6 +83,29 @@ function bindDirectives(root) {
 					value.split(' ').filter(c => c).forEach(c => classes.add(c));
 					el.className = Array.from(classes).join(' ');
 				});
+			} else if (attr.name === 'h-style') {
+				createEffect(() => {
+					const value = fn(signals, el);
+
+					// only support object syntax (e.g. { color: isActive ? 'red' : 'blue' })
+					if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+						return;
+					}
+
+					Object.entries(value).forEach(([key, val]) => {
+						if (val == null) {
+							return;
+						}
+
+						// convert camelCase to kebab-case (but skip css variables)
+						let cssProp = key;
+						if (!cssProp.startsWith('--')) {
+							cssProp = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+						}
+
+						el.style.setProperty(cssProp, String(val));
+					});
+				});
 			}
 		}
 	});
