@@ -39,6 +39,7 @@ export function init(root = document.body) {
 	return () => {
 		cleanup.forEach(dispose => dispose());
 		cleanup.length = 0;
+		Object.keys(signals).forEach(key => delete signals[key]);
 	};
 };
 
