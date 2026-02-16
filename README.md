@@ -9,20 +9,20 @@ Hamsta is a just a tiny mix between [Alpine](https://alpinejs.dev/) and [Solid](
 **CDN (auto-initialises):**
 ```html
 <script src="https://cdn.jsdelivr.net/npm/hamstajs@latest/dist/hamsta.min.js" defer></script>
-<!-- You can disable auto init with using `disable-auto-init` attribute on the same script tag -->
+<!-- You can disable auto init using `disable-auto-init` attribute on the same script tag -->
 
 <body>
-  <header h-signals="{ count: 0, user: 'Alice' }" h-text="`Hello ${s.user}!`"></header>
+  <header h-signals="{ name: 'Whiskers', count: 0 }" h-text="`Hello ${s.name}!`"></header>
 
-	<!-- Different component, same state -->
+  <!-- Different component, same state -->
   <main>
     <p h-text="s.count"></p>
-    <button h-onclick="s.count++">+</button>
+    <button h-onclick="s.count++">Feed the hamster</button>
   </main>
   
   <!-- Another component, state is still here -->
   <footer h-show="s.count > 5">
-    Wow, ${s.user}, you clicked a lot!
+    Wow, ${s.name}, you ate a lot!
   </footer>
 </body>
 ```
@@ -33,14 +33,16 @@ npm install hamstajs
 ```
 ```js
 import hamsta from 'hamstajs';
-hamsta.init(); // initialises h-* directives
+
+// initialises h-* directives and dispatches a hamsta:ready event on the document
+hamsta.init();
 ```
 
 That's it. You're done. Go home.
 
 ## Why another framework?
 
-It's **15x smaller than Alpine** (1KB vs 15KB) - so tiny it fits in a hamster's cheek pouch. Everything's **global signals only**, so no scope wrestling and stores just work. It's built on **signals** for fine-grained reactivity like Solid, and has a **familiar syntax** if you already know Alpine.
+It's **15x smaller than Alpine** (1KB vs 15KB) - so tiny it fits in a hamster's cheek pouch. Everything's **global signals only**, so no scope wrestling and stores just work. Also, it's built on **signals** for fine-grained reactivity like Solid, and has a **familiar syntax** if you already know Alpine.
 
 ## Directives
 
@@ -63,7 +65,7 @@ import { createSignal, createEffect } from 'hamstajs';
 const [count, setCount] = createSignal(0);
 
 createEffect(() => {
-  console.log('Count is now:', count());
+  console.log('Count is now: ', count());
 });
 
 setCount(42); // logs: "Count is now: 42"
