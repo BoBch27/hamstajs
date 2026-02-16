@@ -18,7 +18,9 @@ const scriptTag = document.currentScript;
 if (typeof document !== 'undefined' && scriptTag && !scriptTag.hasAttribute('disable-auto-init')) {
 	const autoInit = () => {
 		if (document.body) {
-			directives.init();
+			const cleanup = directives.init();
+			window.hamsta.cleanup = cleanup;
+
 			document.dispatchEvent(new CustomEvent('hamsta:ready'));
 		}
 	};

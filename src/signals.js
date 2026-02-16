@@ -45,4 +45,9 @@ export function createEffect(fn) {
 
 	effect.dependencies = new Set();
 	effect();
+
+	return () => {
+		effect.dependencies.forEach(cleanup => cleanup());
+		effect.dependencies.clear();
+	};
 };

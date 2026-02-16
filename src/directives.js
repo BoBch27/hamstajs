@@ -1,6 +1,7 @@
 import { createSignal, createEffect } from "./signals";
 
 export const signals = {};
+const cleanup = [];
 
 export function init(root = document.body) {
 	const signalsAttr = 'h-signals';
@@ -34,6 +35,11 @@ export function init(root = document.body) {
 	});
 
 	bindDirectives(root);
+
+	return () => {
+		cleanup.forEach(dispose => dispose());
+		cleanup.length = 0;
+	};
 };
 
 function bindDirectives(root) {
@@ -46,7 +52,11 @@ function bindDirectives(root) {
 			const code = attr.value;
 
 			if (attr.name.startsWith('h-on')) {
-				bindEvent(code, attr.name, el);
+				const dispose = bindEvent(code, attr.name, el);
+				if (dispose) {
+					cleanup.push(dispose);
+				}
+
 				continue;
 			}
 
@@ -55,16 +65,22 @@ function bindDirectives(root) {
 				continue;
 			}
 
+			let dispose;
+
 			if (attr.name === 'h-text') {
-				bindText(fn, attr.name, el);
+				dispose = bindText(fn, attr.name, el);
 			} else if (attr.name === 'h-show') {
-				bindShow(fn, attr.name, el);
+				dispose = bindShow(fn, attr.name, el);
 			} else if (attr.name === 'h-class') {
-				bindClass(fn, attr.name, el);
+				dispose = bindClass(fn, attr.name, el);
 			} else if (attr.name === 'h-style') {
-				bindStyle(fn, attr.name, el);
+				dispose = bindStyle(fn, attr.name, el);
 			} else {
-				bindAttr(fn, attr.name, el);
+				dispose = bindAttr(fn, attr.name, el);
+			}
+
+			if (dispose) {
+				cleanup.push(dispose);
 			}
 		}
 	});
@@ -77,11 +93,14 @@ function bindEvent(code, attrName, el) {
 		return;
 	}
 
-	el.addEventListener(eventName, (e) => callExpression(fn, attrName, el, [e, signals, el]));
+	const handler = (e) => callExpression(fn, attrName, el, [e, signals, el]);
+	el.addEventListener(eventName, handler);
+
+	return () => el.removeEventListener(eventName, handler);
 };
 
 function bindText(fn, attrName, el) {
-	createEffect(() => {
+	return createEffect(() => {
 		const value = callExpression(fn, attrName, el, [signals, el]);
 		el.textContent = value ?? '';
 	});
@@ -90,7 +109,7 @@ function bindText(fn, attrName, el) {
 function bindShow(fn, attrName, el) {
 	const originalDisplay = el.style.display;
 
-	createEffect(() => {
+	return createEffect(() => {
 		const value = callExpression(fn, attrName, el, [signals, el]);
 		el.style.display = value ? (originalDisplay || '') : 'none';
 	});
@@ -99,7 +118,7 @@ function bindShow(fn, attrName, el) {
 function bindClass(fn, attrName, el) {
 	const originalClasses = el.className.split(' ').filter(c => c);
 
-	createEffect(() => {
+	return createEffect(() => {
 		const value = callExpression(fn, attrName, el, [signals, el]);
 		const classes = new Set(originalClasses);
 
@@ -114,7 +133,7 @@ function bindClass(fn, attrName, el) {
 };
 
 function bindStyle(fn, attrName, el) {
-	createEffect(() => {
+	return createEffect(() => {
 		const value = callExpression(fn, attrName, el, [signals, el]);
 
 		// only support object syntax (e.g. { color: isActive ? 'red' : 'blue' })
@@ -139,7 +158,7 @@ function bindStyle(fn, attrName, el) {
 };
 
 function bindAttr(fn, attrName, el) {
-	createEffect(() => {
+	return createEffect(() => {
 		const [_, attribute] = attrName.split('h-');
 		const value = callExpression(fn, attrName, el, [signals, el]);
 
