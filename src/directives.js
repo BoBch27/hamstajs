@@ -68,6 +68,21 @@ function bindDirectives(root) {
 				createEffect(() => {
 					el.style.display = fn(signals, el) ? (originalDisplay || '') : 'none';
 				});
+			} else if (attr.name === 'h-class') {
+				const originalClasses = el.className.split(' ').filter(c => c);
+
+				createEffect(() => {
+					const value = fn(signals, el);
+					const classes = new Set(originalClasses);
+
+					// only support string expressions for now, e.g. "isActive ? 'bg-blue' : 'bg-white'"
+					if (typeof value !== 'string') {
+						return;
+					}
+
+					value.split(' ').filter(c => c).forEach(c => classes.add(c));
+					el.className = Array.from(classes).join(' ');
+				});
 			}
 		}
 	});
