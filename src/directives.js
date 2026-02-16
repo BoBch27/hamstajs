@@ -3,20 +3,17 @@ import { createSignal, createEffect } from "./signals";
 export const signals = {};
 
 export function init(root = document.body) {
-	root.querySelectorAll('[h-signals]').forEach(el => {
-		const expr = el.getAttribute('h-signals');
-		let data = {};
+	const signalsAttr = 'h-signals';
 
-		try {
-			// parse JS object expression (e.g. "{ count: 0 }" becomes an actual object)
-			if (expr.trim()) {
-				const fn = new Function(`return ${expr}`);
-				data = fn();
-			}
-		} catch (e) {
-			console.error('🐹 [h-signals] Parse error: ', e);
+	root.querySelectorAll(`[${signalsAttr}]`).forEach(el => {
+		const expr = el.getAttribute(signalsAttr);
+
+		const fn = parseExpression(`return ${expr}`, signalsAttr, el, []);
+		if (!fn) {
 			return;
 		}
+
+		const data = callExpression(fn, signalsAttr, el, []);
 
 		// create signals for each property
 		Object.keys(data).forEach(key => {
@@ -50,29 +47,37 @@ function bindDirectives(root) {
 
 			if (attr.name.startsWith('h-on')) {
 				const [_, eventName] = attr.name.split('h-on');
-				const fn = new Function('event', 's', 'el', code);
+				const fn = parseExpression(code, attr.name, el, ['event', 's', 'el']);
+				if (!fn) {
+					continue;
+				}
 
-				el.addEventListener(eventName, (e) => fn(e, signals, el));
+				el.addEventListener(eventName, (e) => callExpression(fn, attr.name, el, [e, signals, el]));
 				continue;
 			}
 
-			const fn = new Function('s', 'el', `return (${code})`);
+			const fn = parseExpression(`return (${code})`, attr.name, el, ['s', 'el']);
+			if (!fn) {
+				continue;
+			}
 
 			if (attr.name === 'h-text') {
 				createEffect(() => {
-					el.textContent = fn(signals, el) ?? '';
+					const value = callExpression(fn, attr.name, el, [signals, el]);
+					el.textContent = value ?? '';
 				});
 			} else if (attr.name === 'h-show') {
 				const originalDisplay = el.style.display;
 
 				createEffect(() => {
-					el.style.display = fn(signals, el) ? (originalDisplay || '') : 'none';
+					const value = callExpression(fn, attr.name, el, [signals, el]);
+					el.style.display = value ? (originalDisplay || '') : 'none';
 				});
 			} else if (attr.name === 'h-class') {
 				const originalClasses = el.className.split(' ').filter(c => c);
 
 				createEffect(() => {
-					const value = fn(signals, el);
+					const value = callExpression(fn, attr.name, el, [signals, el]);
 					const classes = new Set(originalClasses);
 
 					// only support string expressions for now, e.g. "isActive ? 'bg-blue' : 'bg-white'"
@@ -85,7 +90,7 @@ function bindDirectives(root) {
 				});
 			} else if (attr.name === 'h-style') {
 				createEffect(() => {
-					const value = fn(signals, el);
+					const value = callExpression(fn, attr.name, el, [signals, el]);
 
 					// only support object syntax (e.g. { color: isActive ? 'red' : 'blue' })
 					if (value === null || typeof value !== 'object' || Array.isArray(value)) {
@@ -109,7 +114,7 @@ function bindDirectives(root) {
 			} else {
 				createEffect(() => {
 					const [_, attrName] = attr.name.split('h-');
-					const value = fn(signals, el);
+					const value = callExpression(fn, attr.name, el, [signals, el]);
 
 					if (typeof value === 'boolean') {
 						if (value) {
@@ -126,4 +131,25 @@ function bindDirectives(root) {
 			}
 		}
 	});
+};
+
+// parse string expressions to JS (e.g. "{ count: 0 }" becomes an actual object)
+function parseExpression(code, attrName, el, args) {
+	try {
+		const fn = new Function(...args, code);
+		return fn;
+	} catch (e) {
+		console.error(`🐹 [${attrName}] Parse error: ${e.message}\n\n`, el);
+		return null;
+	}
+};
+
+// run JS expressions
+function callExpression(fn, attrName, el, args) {
+	try {
+		const result = fn(...args);
+		return result;
+	} catch (e) {
+		console.error(`🐹 [${attrName}] Runtime error: ${e.message}\n\n`, el);
+	}
 };
