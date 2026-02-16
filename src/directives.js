@@ -39,7 +39,7 @@ export function init(root = document.body) {
 function bindDirectives(root) {
 	root.querySelectorAll('*').forEach(el => {
 		for (const attr of el.attributes) {
-			if (!attr.name.startsWith(`h-`)) {
+			if (!attr.name.startsWith(`h-`) || attr.name === 'h-signals') {
 				continue;
 			}
 
