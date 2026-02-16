@@ -46,13 +46,7 @@ function bindDirectives(root) {
 			const code = attr.value;
 
 			if (attr.name.startsWith('h-on')) {
-				const [_, eventName] = attr.name.split('h-on');
-				const fn = parseExpression(code, attr.name, el, ['event', 's', 'el']);
-				if (!fn) {
-					continue;
-				}
-
-				el.addEventListener(eventName, (e) => callExpression(fn, attr.name, el, [e, signals, el]));
+				bindEvent(code, attr.name, el);
 				continue;
 			}
 
@@ -62,73 +56,103 @@ function bindDirectives(root) {
 			}
 
 			if (attr.name === 'h-text') {
-				createEffect(() => {
-					const value = callExpression(fn, attr.name, el, [signals, el]);
-					el.textContent = value ?? '';
-				});
+				bindText(fn, attr.name, el);
 			} else if (attr.name === 'h-show') {
-				const originalDisplay = el.style.display;
-
-				createEffect(() => {
-					const value = callExpression(fn, attr.name, el, [signals, el]);
-					el.style.display = value ? (originalDisplay || '') : 'none';
-				});
+				bindShow(fn, attr.name, el);
 			} else if (attr.name === 'h-class') {
-				const originalClasses = el.className.split(' ').filter(c => c);
-
-				createEffect(() => {
-					const value = callExpression(fn, attr.name, el, [signals, el]);
-					const classes = new Set(originalClasses);
-
-					// only support string expressions for now, e.g. "isActive ? 'bg-blue' : 'bg-white'"
-					if (typeof value !== 'string') {
-						return;
-					}
-
-					value.split(' ').filter(c => c).forEach(c => classes.add(c));
-					el.className = Array.from(classes).join(' ');
-				});
+				bindClass(fn, attr.name, el);
 			} else if (attr.name === 'h-style') {
-				createEffect(() => {
-					const value = callExpression(fn, attr.name, el, [signals, el]);
-
-					// only support object syntax (e.g. { color: isActive ? 'red' : 'blue' })
-					if (value === null || typeof value !== 'object' || Array.isArray(value)) {
-						return;
-					}
-
-					Object.entries(value).forEach(([key, val]) => {
-						if (val == null) {
-							return;
-						}
-
-						// convert camelCase to kebab-case (but skip css variables)
-						let cssProp = key;
-						if (!cssProp.startsWith('--')) {
-							cssProp = key.replace(/([A-Z])/g, '-$1').toLowerCase();
-						}
-
-						el.style.setProperty(cssProp, String(val));
-					});
-				});
+				bindStyle(fn, attr.name, el);
 			} else {
-				createEffect(() => {
-					const [_, attrName] = attr.name.split('h-');
-					const value = callExpression(fn, attr.name, el, [signals, el]);
-
-					if (typeof value === 'boolean') {
-						if (value) {
-							el.setAttribute(attrName, '');
-						} else {
-							el.removeAttribute(attrName);
-						}
-					} else if (value == null) {
-						el.removeAttribute(attrName);
-					} else {
-						el.setAttribute(attrName, value);
-					}
-				});
+				bindAttr(fn, attr.name, el);
 			}
+		}
+	});
+};
+
+function bindEvent(code, attrName, el) {
+	const [_, eventName] = attrName.split('h-on');
+	const fn = parseExpression(code, attrName, el, ['event', 's', 'el']);
+	if (!fn) {
+		return;
+	}
+
+	el.addEventListener(eventName, (e) => callExpression(fn, attrName, el, [e, signals, el]));
+};
+
+function bindText(fn, attrName, el) {
+	createEffect(() => {
+		const value = callExpression(fn, attrName, el, [signals, el]);
+		el.textContent = value ?? '';
+	});
+};
+
+function bindShow(fn, attrName, el) {
+	const originalDisplay = el.style.display;
+
+	createEffect(() => {
+		const value = callExpression(fn, attrName, el, [signals, el]);
+		el.style.display = value ? (originalDisplay || '') : 'none';
+	});
+};
+
+function bindClass(fn, attrName, el) {
+	const originalClasses = el.className.split(' ').filter(c => c);
+
+	createEffect(() => {
+		const value = callExpression(fn, attrName, el, [signals, el]);
+		const classes = new Set(originalClasses);
+
+		// only support string expressions for now, e.g. "isActive ? 'bg-blue' : 'bg-white'"
+		if (typeof value !== 'string') {
+			return;
+		}
+
+		value.split(' ').filter(c => c).forEach(c => classes.add(c));
+		el.className = Array.from(classes).join(' ');
+	});
+};
+
+function bindStyle(fn, attrName, el) {
+	createEffect(() => {
+		const value = callExpression(fn, attrName, el, [signals, el]);
+
+		// only support object syntax (e.g. { color: isActive ? 'red' : 'blue' })
+		if (value === null || typeof value !== 'object' || Array.isArray(value)) {
+			return;
+		}
+
+		Object.entries(value).forEach(([key, val]) => {
+			if (val == null) {
+				return;
+			}
+
+			// convert camelCase to kebab-case (but skip css variables)
+			let cssProp = key;
+			if (!cssProp.startsWith('--')) {
+				cssProp = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+			}
+
+			el.style.setProperty(cssProp, String(val));
+		});
+	});
+};
+
+function bindAttr(fn, attrName, el) {
+	createEffect(() => {
+		const [_, attribute] = attrName.split('h-');
+		const value = callExpression(fn, attrName, el, [signals, el]);
+
+		if (typeof value === 'boolean') {
+			if (value) {
+				el.setAttribute(attribute, '');
+			} else {
+				el.removeAttribute(attribute);
+			}
+		} else if (value == null) {
+			el.removeAttribute(attribute);
+		} else {
+			el.setAttribute(attribute, value);
 		}
 	});
 };
