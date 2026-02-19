@@ -46,7 +46,7 @@ export function init(root = document.body) {
 function bindDirectives(root) {
 	root.querySelectorAll('*').forEach(el => {
 		for (const attr of el.attributes) {
-			if (!attr.name.startsWith(`h-`) || attr.name === 'h-signals') {
+			if (!attr.name.startsWith(`h-`) || attr.name === 'h-signals' || attr.name.startsWith('h-transition-')) {
 				continue;
 			}
 
@@ -108,11 +108,77 @@ function bindText(fn, attrName, el) {
 };
 
 function bindShow(fn, attrName, el) {
-	const originalDisplay = el.style.display;
+	let originalDisplay = getComputedStyle(el).display;
+
+	// if already hidden, set to empty string to let CSS decide
+	if (originalDisplay === 'none') {
+		originalDisplay = '';
+	}
+
+	const enterClasses = el.getAttribute('h-transition-enter')?.split(' ').filter(c => c);
+	const leaveClasses = el.getAttribute('h-transition-leave')?.split(' ').filter(c => c);
+
+	let pendingRaf = null;
+	let pendingTransitionEnd = null;
+
+	function cancelPending() {
+		if (pendingRaf) {
+			cancelAnimationFrame(pendingRaf);
+			pendingRaf = null;
+		}
+
+		if (pendingTransitionEnd) {
+			el.removeEventListener('transitionend', pendingTransitionEnd);
+			el.removeEventListener('animationend', pendingTransitionEnd);
+			pendingTransitionEnd = null;
+		}
+	}
 
 	return createEffect(() => {
-		const value = callExpression(fn, attrName, el, [signals, el]);
-		el.style.display = value ? (originalDisplay || '') : 'none';
+		const show = callExpression(fn, attrName, el, [signals, el]);
+
+		// cancel in-flight transitions if signal flips before it completes
+		cancelPending();
+
+		if (show) {
+			el.style.display = originalDisplay;
+
+			if (enterClasses) {
+				if (leaveClasses) {
+					el.classList.remove(...leaveClasses);
+				}
+
+				// delay until after display change (can't transition directly from display: none)
+				pendingRaf = requestAnimationFrame(() => {
+					pendingRaf = null;
+					el.classList.add(...enterClasses);
+				});
+			}
+		} else {
+			if (leaveClasses && el.style.display !== 'none') {
+				if (enterClasses) {
+					el.classList.remove(...enterClasses);
+				}
+
+				el.classList.add(...leaveClasses);
+
+				// hide element only once the transition/animation has finished
+				pendingTransitionEnd = () => {
+					el.style.display = 'none';
+
+					if (leaveClasses) {
+						el.classList.remove(...leaveClasses);
+					}
+
+					pendingTransitionEnd = null;
+				};
+
+				el.addEventListener('transitionend', pendingTransitionEnd, { once: true });
+				el.addEventListener('animationend', pendingTransitionEnd, { once: true });
+			} else {
+				el.style.display = 'none';
+			}
+		}
 	});
 };
 
