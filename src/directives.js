@@ -88,7 +88,7 @@ function bindDirectives(root) {
 };
 
 function bindEvent(code, attrName, el) {
-	const [_, eventName] = attrName.split('h-on');
+	const eventName = attrName.slice(4);
 	const fn = parseExpression(code, attrName, el, ['event', 's', 'el']);
 	if (!fn) {
 		return;
@@ -226,7 +226,7 @@ function bindStyle(fn, attrName, el) {
 
 function bindAttr(fn, attrName, el) {
 	return createEffect(() => {
-		const [_, attribute] = attrName.split('h-');
+		const attribute = attrName.slice(2);
 		const value = callExpression(fn, attrName, el, [signals, el]);
 
 		if (typeof value === 'boolean') {
