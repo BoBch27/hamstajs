@@ -2,7 +2,7 @@
 
 **Reactive HTML in a squeak!**
 
-Hamsta is a just a tiny mix between [Alpine](https://alpinejs.dev/) and [Solid](https://www.solidjs.com/). **2KB gzipped** of signal-based reactivity that just works.
+Hamsta is a just a tiny mix between [Alpine](https://alpinejs.dev/) and [Solid](https://www.solidjs.com/). **2KB (gzipped)** of signal-based reactivity that just works.
 
 ## Quick start
 
@@ -22,14 +22,30 @@ Hamsta is a just a tiny mix between [Alpine](https://alpinejs.dev/) and [Solid](
     <!-- h-show: toggle visibility -->
     <p h-show="s.count > 0" h-text="`Fed ${s.count} times`"></p>
 
+    <!-- h-show with transitions: fade-in/out are your own CSS classes (transitions, animations, tailwind, etc) -->
+    <!-- add style="display: none" to prevent flash of content before hamsta initialises -->
+    <p
+      style="display: none"
+      h-show="s.count > 5"
+      h-transition-enter="fade-in"
+      h-transition-leave="fade-out"
+    >
+      Getting full...
+    </p>
+
     <!-- h-class: reactive classes (merged with existing ones) -->
     <p h-class="s.count > 5 ? 'danger' : 'safe'">Hunger level</p>
 
     <!-- h-style: reactive inline styles -->
     <div h-style="{ color: s.count > 5 ? 'red' : 'green' }">Status</div>
 
-    <!-- h-on{event}: event listeners -->
-    <button h-onclick="s.count++" h-disabled="s.count >= 10">Feed the hamster</button>
+    <!-- h-on{event}: event listeners (supports async/await) -->
+    <button 
+      h-onclick="await fetch('/feed', { method: 'POST' }); s.count++" 
+      h-disabled="s.count >= 10"
+    >
+      Feed the hamster
+    </button>
   </main>
 
   <!-- SPA/htmx only: clean up like a self-respecting hamster using hamsta.cleanup() -->
@@ -44,10 +60,10 @@ npm install hamstajs
 import hamsta from 'hamstajs';
 
 // initialises h-* directives and dispatches a hamsta:ready event on the document
-// returns a cleanup function to clean up all effects and event listeners
+// returns a cleanup function to reset effects, listeners and signals declared via h-signals
 const cleanup = hamsta.init();
 
-// later, e.g. on SPA route change:
+// later, e.g. on a route change:
 cleanup();
 ```
 
@@ -64,9 +80,11 @@ These are the tricks our hamster currently knows:
 - `h-signals` - declare your reactive state
 - `h-text` - reactive text content
 - `h-show` - toggle visibility
-- `h-class` - reactive class names (string syntax only, and it's merged with existing classes)
+- `h-transition-enter` - classes to add when element is shown (used with `h-show`)
+- `h-transition-leave` - classes to add when element is hidden (used with `h-show`)
+- `h-class` - reactive class names (merged with existing classes)
 - `h-style` - reactive inline styles (object syntax only, e.g. `{ color: 'red' }`)
-- `h-on{event}` - event listeners (e.g., `h-onclick`, `h-oninput`)
+- `h-on{event}` - event listeners (e.g., `h-onclick`, `h-oninput`) - supports async/await
 - `h-{attr}` - reactive attributes (e.g., `h-disabled`, `h-href`)
 
 All directives get `s` (signals) and `el` (current element) in scope. The event directives also get `event`.
@@ -106,7 +124,7 @@ It's v0.2.0. Put it in production if you like living dangerously (like [me](http
 Explicitness over magic. Alpine uses `with` statements which are slow, break optimisations, and deprecated in strict mode. The `s.` prefix is clear, fast, and you always know where your data comes from.
 
 **Why not just use Alpine/Solid/Vue?**  
-Sometimes you just want a bit of reactivity without importing a small country's worth of JavaScript. This is 2KB.
+Sometimes you just want a bit of reactivity without importing a small country's worth of JavaScript. Especially when you have a server-rendered HTML that needs a sprinkle of reactivity (like htmx, Rails, Laravel, Django, etc). For fully dynamic UIs built mostly on the client (browser), you're better off with Alpine or a proper SPA framework.
 
 **Can I contribute?**  
 Yeah! The whole thing is tiny enough to read in a bathroom break.
