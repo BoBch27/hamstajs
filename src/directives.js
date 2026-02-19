@@ -53,7 +53,7 @@ function bindDirectives(root) {
 			const code = attr.value;
 
 			if (attr.name.startsWith('h-on')) {
-				const dispose = bindEvent(code, attr.name, el);
+				const dispose = bindEvent(`return (async () => { ${code} })();`, attr.name, el);
 				if (dispose) {
 					cleanup.push(dispose);
 				}
@@ -258,6 +258,10 @@ function parseExpression(code, attrName, el, args) {
 function callExpression(fn, attrName, el, args) {
 	try {
 		const result = fn(...args);
+		if (result instanceof Promise) {
+			result.catch(e => console.error(`🐹 [${attrName}] Async error: ${e.message}\n\n`, el));
+		}
+
 		return result;
 	} catch (e) {
 		console.error(`🐹 [${attrName}] Runtime error: ${e.message}\n\n`, el);
