@@ -46,7 +46,8 @@ export function init(root = document.body) {
 function bindDirectives(root) {
 	root.querySelectorAll('*').forEach(el => {
 		for (const attr of el.attributes) {
-			if (!attr.name.startsWith(`h-`) || attr.name === 'h-signals' || attr.name.startsWith('h-transition-')) {
+			if (!attr.name.startsWith(`h-`) || attr.name === 'h-signals' ||
+				attr.name === 'h-transition-enter' || attr.name === 'h-transition-leave') {
 				continue;
 			}
 
