@@ -1,10 +1,12 @@
 import { createSignal, createEffect } from "./signals";
 
 export const signals = {};
+export const methods = {};
 const cleanup = [];
 
 export function init(root = document.body) {
 	const signalsAttr = 'h-signals';
+	const methodsAttr = 'h-methods';
 
 	root.querySelectorAll(`[${signalsAttr}]`).forEach(el => {
 		const expr = el.getAttribute(signalsAttr);
@@ -14,16 +16,16 @@ export function init(root = document.body) {
 			return;
 		}
 
-		const data = callExpression(fn, signalsAttr, el, []);
+		const signalsData = callExpression(fn, signalsAttr, el, []);
 
 		// create signals for each property
-		Object.keys(data).forEach(key => {
+		Object.keys(signalsData).forEach(key => {
 			if (signals[key]) {
 				console.warn(`🐹 [h-signals] "${key}" already exists (current: ${signals[key]}). Skipping.`);
 				return;
 			}
 
-			const [get, set] = createSignal(data[key]);
+			const [get, set] = createSignal(signalsData[key]);
 
 			Object.defineProperty(signals, key, {
 				get() { return get(); },
@@ -32,6 +34,32 @@ export function init(root = document.body) {
 				configurable: true  // so signals can be overwritten
 			});
 		});
+
+		// parse methods (done here since attribute is only allowed on same element as h-signals)
+		if (el.hasAttribute(methodsAttr)) {
+			const expr = el.getAttribute(methodsAttr);
+
+			const fn = parseExpression(`return ${expr}`, methodsAttr, el, ['s']);
+			if (!fn) {
+				return;
+			}
+
+			const methodsData = callExpression(fn, methodsAttr, el, [signals]);
+
+			Object.keys(methodsData).forEach(key => {
+				if (methods[key]) {
+					console.warn(`🐹 [h-methods] "${key}" already exists. Skipping.`);
+					return;
+				}
+
+				if (typeof methodsData[key] !== 'function') {
+					console.warn(`🐹 [h-methods] "${key}" must be a function. Skipping.`);
+					return;
+				}
+
+				methods[key] = methodsData[key];
+			});
+		}
 	});
 
 	bindDirectives(root);
@@ -51,6 +79,11 @@ function bindDirectives(root) {
 				continue;
 			}
 
+			if (attr.name === 'h-methods' && !el.hasAttribute('h-signals')) {
+				console.warn(`🐹 [h-methods] should be used on the same element as h-signals. Skipping.`)
+				continue;
+			}
+
 			const code = attr.value;
 
 			if (attr.name.startsWith('h-on')) {
@@ -62,7 +95,7 @@ function bindDirectives(root) {
 				continue;
 			}
 
-			const fn = parseExpression(`return (${code})`, attr.name, el, ['s', 'el']);
+			const fn = parseExpression(`return (${code})`, attr.name, el, ['s', 'm', 'el']);
 			if (!fn) {
 				continue;
 			}
@@ -90,12 +123,12 @@ function bindDirectives(root) {
 
 function bindEvent(code, attrName, el) {
 	const eventName = attrName.slice(4);
-	const fn = parseExpression(code, attrName, el, ['event', 's', 'el']);
+	const fn = parseExpression(code, attrName, el, ['event', 's', 'm', 'el']);
 	if (!fn) {
 		return;
 	}
 
-	const handler = (e) => callExpression(fn, attrName, el, [e, signals, el]);
+	const handler = (e) => callExpression(fn, attrName, el, [e, signals, methods, el]);
 	el.addEventListener(eventName, handler);
 
 	return () => el.removeEventListener(eventName, handler);
@@ -103,7 +136,7 @@ function bindEvent(code, attrName, el) {
 
 function bindText(fn, attrName, el) {
 	return createEffect(() => {
-		const value = callExpression(fn, attrName, el, [signals, el]);
+		const value = callExpression(fn, attrName, el, [signals, methods, el]);
 		el.textContent = value ?? '';
 	});
 };
@@ -136,7 +169,7 @@ function bindShow(fn, attrName, el) {
 	}
 
 	return createEffect(() => {
-		const show = callExpression(fn, attrName, el, [signals, el]);
+		const show = callExpression(fn, attrName, el, [signals, methods, el]);
 
 		// cancel in-flight transitions if signal flips before it completes
 		cancelPending();
@@ -187,7 +220,7 @@ function bindClass(fn, attrName, el) {
 	const originalClasses = el.className.split(' ').filter(c => c);
 
 	return createEffect(() => {
-		const value = callExpression(fn, attrName, el, [signals, el]);
+		const value = callExpression(fn, attrName, el, [signals, methods, el]);
 		const classes = new Set(originalClasses);
 
 		// only support string expressions for now, e.g. "isActive ? 'bg-blue' : 'bg-white'"
@@ -202,7 +235,7 @@ function bindClass(fn, attrName, el) {
 
 function bindStyle(fn, attrName, el) {
 	return createEffect(() => {
-		const value = callExpression(fn, attrName, el, [signals, el]);
+		const value = callExpression(fn, attrName, el, [signals, methods, el]);
 
 		// only support object syntax (e.g. { color: isActive ? 'red' : 'blue' })
 		if (value === null || typeof value !== 'object' || Array.isArray(value)) {
@@ -228,7 +261,7 @@ function bindStyle(fn, attrName, el) {
 function bindAttr(fn, attrName, el) {
 	return createEffect(() => {
 		const attribute = attrName.slice(2);
-		const value = callExpression(fn, attrName, el, [signals, el]);
+		const value = callExpression(fn, attrName, el, [signals, methods, el]);
 
 		if (typeof value === 'boolean') {
 			if (value) {
