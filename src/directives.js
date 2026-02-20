@@ -5,7 +5,7 @@ export const methods = {};
 const cleanup = [];
 
 export function init(root = document.body) {
-	root.querySelectorAll(`[${signalsAttr}]`).forEach(el => {
+	root.querySelectorAll('[h-signals]').forEach(el => {
 		initSignals(el);
 		initMethods(el); // methods are only allowed on same element as h-signals
 	});
