@@ -5,61 +5,9 @@ export const methods = {};
 const cleanup = [];
 
 export function init(root = document.body) {
-	const signalsAttr = 'h-signals';
-	const methodsAttr = 'h-methods';
-
 	root.querySelectorAll(`[${signalsAttr}]`).forEach(el => {
-		const expr = el.getAttribute(signalsAttr);
-
-		const fn = parseExpression(`return ${expr}`, signalsAttr, el, []);
-		if (!fn) {
-			return;
-		}
-
-		const signalsData = callExpression(fn, signalsAttr, el, []);
-
-		// create signals for each property
-		Object.keys(signalsData).forEach(key => {
-			if (signals[key]) {
-				console.warn(`🐹 [h-signals] "${key}" already exists (current: ${signals[key]}). Skipping.`);
-				return;
-			}
-
-			const [get, set] = createSignal(signalsData[key]);
-
-			Object.defineProperty(signals, key, {
-				get() { return get(); },
-				set(val) { set(val); },
-				enumerable: true,
-				configurable: true  // so signals can be overwritten
-			});
-		});
-
-		// parse methods (done here since attribute is only allowed on same element as h-signals)
-		if (el.hasAttribute(methodsAttr)) {
-			const expr = el.getAttribute(methodsAttr);
-
-			const fn = parseExpression(`return ${expr}`, methodsAttr, el, ['s']);
-			if (!fn) {
-				return;
-			}
-
-			const methodsData = callExpression(fn, methodsAttr, el, [signals]);
-
-			Object.keys(methodsData).forEach(key => {
-				if (methods[key]) {
-					console.warn(`🐹 [h-methods] "${key}" already exists. Skipping.`);
-					return;
-				}
-
-				if (typeof methodsData[key] !== 'function') {
-					console.warn(`🐹 [h-methods] "${key}" must be a function. Skipping.`);
-					return;
-				}
-
-				methods[key] = methodsData[key];
-			});
-		}
+		initSignals(el);
+		initMethods(el); // methods are only allowed on same element as h-signals
 	});
 
 	bindDirectives(root);
@@ -69,6 +17,70 @@ export function init(root = document.body) {
 		cleanup.length = 0;
 		Object.keys(signals).forEach(key => delete signals[key]);
 	};
+};
+
+function initSignals(el) {
+	const signalsAttr = 'h-signals';
+
+	const expr = el.getAttribute(signalsAttr);
+	const fn = parseExpression(`return ${expr}`, signalsAttr, el, []);
+	if (!fn) {
+		return;
+	}
+
+	const data = callExpression(fn, signalsAttr, el, []);
+	if (!data) {
+		return;
+	}
+
+	Object.keys(data).forEach(key => {
+		if (signals[key]) {
+			console.warn(`🐹 [${signalsAttr}] "${key}" already exists. Skipping.`);
+			return;
+		}
+
+		const [get, set] = createSignal(data[key]);
+
+		Object.defineProperty(signals, key, {
+			get() { return get(); },
+			set(val) { set(val); },
+			enumerable: true,
+			configurable: true
+		});
+	});
+};
+
+function initMethods(el) {
+	const methodsAttr = 'h-methods';
+
+	if (!el.hasAttribute(methodsAttr)) {
+		return;
+	}
+
+	const expr = el.getAttribute(methodsAttr);
+	const fn = parseExpression(`return ${expr}`, methodsAttr, el, ['s']);
+	if (!fn) {
+		return;
+	}
+
+	const data = callExpression(fn, methodsAttr, el, [signals]);
+	if (!data) {
+		return;
+	}
+
+	Object.keys(data).forEach(key => {
+		if (methods[key]) {
+			console.warn(`🐹 [${methodsAttr}] "${key}" already exists. Skipping.`);
+			return;
+		}
+
+		if (typeof data[key] !== 'function') {
+			console.warn(`🐹 [${methodsAttr}] "${key}" must be a function. Skipping.`);
+			return;
+		}
+
+		methods[key] = data[key];
+	});
 };
 
 function bindDirectives(root) {
