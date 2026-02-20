@@ -1,6 +1,6 @@
 {
   "name": "hamstajs",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Sprinkle some reactivity and put your HTML on the wheel.",
   "type": "module",
   "main": "dist/hamsta.esm.js",
