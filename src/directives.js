@@ -8,6 +8,18 @@ export function init(root = document.body) {
 	root.querySelectorAll('[h-signals]').forEach(el => {
 		initSignals(el);
 		initMethods(el); // methods are only allowed on same element as h-signals
+
+		// h-init is only allowed on same element as h-signals and
+		// runs after signals and methods are set up for this element
+		if (el.hasAttribute('h-init')) {
+			const code = el.getAttribute('h-init');
+			const fn = parseExpression(`return (async () => { ${code} })();`, 'h-init', el, ['s', 'm', 'el']);
+			if (fn) {
+				return;
+			}
+
+			queueMicrotask(() => callExpression(fn, 'h-init', el, [signals, methods, el]));
+		}
 	});
 
 	bindDirectives(root);
@@ -93,6 +105,11 @@ function bindDirectives(root) {
 
 			if (attr.name === 'h-methods' && !el.hasAttribute('h-signals')) {
 				console.warn(`🐹 [h-methods] should be used on the same element as h-signals. Skipping.`)
+				continue;
+			}
+
+			if (attr.name === 'h-init' && !el.hasAttribute('h-signals')) {
+				console.warn(`🐹 [h-init] should be used on the same element as h-signals. Skipping.`)
 				continue;
 			}
 
