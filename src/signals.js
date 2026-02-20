@@ -39,8 +39,13 @@ export function createEffect(fn) {
 		effect.dependencies.clear();
 
 		currentEffect = effect;
-		fn();
-		currentEffect = null;
+
+		// ensure currentEffect is always reset even on error in fn
+		try {
+			fn();
+		} finally {
+			currentEffect = null;
+		}
 	};
 
 	effect.dependencies = new Set();
