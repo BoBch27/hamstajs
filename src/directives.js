@@ -103,13 +103,19 @@ function bindDirectives(root) {
 				continue;
 			}
 
-			if (attr.name === 'h-methods' && !el.hasAttribute('h-signals')) {
-				console.warn(`🐹 [h-methods] should be used on the same element as h-signals. Skipping.`)
+			if (attr.name === 'h-methods') {
+				if (!el.hasAttribute('h-signals')) {
+					console.warn(`🐹 [h-methods] should be used on the same element as h-signals. Skipping.`)
+				}
+
 				continue;
 			}
 
-			if (attr.name === 'h-init' && !el.hasAttribute('h-signals')) {
-				console.warn(`🐹 [h-init] should be used on the same element as h-signals. Skipping.`)
+			if (attr.name === 'h-init') {
+				if (!el.hasAttribute('h-signals')) {
+					console.warn(`🐹 [h-init] should be used on the same element as h-signals. Skipping.`)
+				}
+
 				continue;
 			}
 
