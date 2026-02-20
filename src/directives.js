@@ -2,7 +2,7 @@ import { createSignal, createEffect } from "./signals";
 
 export const signals = {};
 export const methods = {};
-const cleanup = [];
+const cleanup = new Map(); // element: [disposers]
 
 export function init(root = document.body) {
 	root.querySelectorAll('[h-signals]').forEach(el => {
@@ -24,10 +24,15 @@ export function init(root = document.body) {
 
 	bindDirectives(root);
 
-	return () => {
-		cleanup.forEach(dispose => dispose());
-		cleanup.length = 0;
-		Object.keys(signals).forEach(key => delete signals[key]);
+	return (clearState = false) => {
+		const disposers = cleanup.get(root) || [];
+		disposers.forEach(dispose => dispose());
+		cleanup.delete(root);
+
+		if (clearState) {
+			Object.keys(signals).forEach(key => delete signals[key]);
+			Object.keys(methods).forEach(key => delete methods[key]);
+		}
 	};
 };
 
@@ -124,7 +129,7 @@ function bindDirectives(root) {
 			if (attr.name.startsWith('h-on')) {
 				const dispose = bindEvent(`return (async () => { ${code} })();`, attr.name, el);
 				if (dispose) {
-					cleanup.push(dispose);
+					addCleanup(root, dispose);
 				}
 
 				continue;
@@ -150,10 +155,18 @@ function bindDirectives(root) {
 			}
 
 			if (dispose) {
-				cleanup.push(dispose);
+				addCleanup(root, dispose);
 			}
 		}
 	});
+};
+
+function addCleanup(root, dispose) {
+	if (!cleanup.has(root)) {
+		cleanup.set(root, []);
+	}
+
+	cleanup.get(root).push(dispose);
 };
 
 function bindEvent(code, attrName, el) {
