@@ -102,7 +102,7 @@ function execInitCode(el) {
 	}
 
 	const fn = parseExpression(`return (async () => { ${code} })();`, initAttr, el, ['s', 'm', 'el']);
-	if (fn) {
+	if (!fn) {
 		return;
 	}
 
