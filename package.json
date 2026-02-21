@@ -1,6 +1,6 @@
 {
   "name": "hamstajs",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "description": "Reactive HTML in a squeak!",
   "type": "module",
   "main": "dist/hamsta.esm.js",

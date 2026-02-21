@@ -136,7 +136,7 @@ MIT - go nuts!
 ---
 
 **Is this production ready?**  
-It's v0.4.1. Put it in production if you like living dangerously (like [me](https://bobbydonev.com/)).
+It's v0.4.2. Put it in production if you like living dangerously (like [me](https://bobbydonev.com/)).
 
 **Why `s.` everywhere instead of just `count` like Alpine?**  
 Explicitness over magic. Alpine uses `with` statements which are slow, break optimisations, and deprecated in strict mode. The `s.` prefix is clear, fast, and you always know where your data comes from.
