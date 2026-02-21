@@ -6,20 +6,9 @@ const cleanup = new Map(); // element: [disposers]
 
 export function init(root = document.body) {
 	root.querySelectorAll('[h-signals]').forEach(el => {
-		initSignals(el);
-		initMethods(el); // methods are only allowed on same element as h-signals
-
-		// h-init is only allowed on same element as h-signals and
-		// runs after signals and methods are set up for this element
-		if (el.hasAttribute('h-init')) {
-			const code = el.getAttribute('h-init');
-			const fn = parseExpression(`return (async () => { ${code} })();`, 'h-init', el, ['s', 'm', 'el']);
-			if (fn) {
-				return;
-			}
-
-			queueMicrotask(() => callExpression(fn, 'h-init', el, [signals, methods, el]));
-		}
+		initSignals(el); // h-signals
+		initMethods(el); // h-methods - only allowed on same element as h-signals
+		execInitCode(el); // h-init - only allowed on same element as h-signals
 	});
 
 	bindDirectives(root);
@@ -98,6 +87,23 @@ function initMethods(el) {
 
 		methods[key] = data[key];
 	});
+};
+
+function execInitCode(el) {
+	const initAttr = 'h-init';
+
+	const code = el.getAttribute(initAttr);
+	if (code === null) {
+		return;
+	}
+
+	const fn = parseExpression(`return (async () => { ${code} })();`, initAttr, el, ['s', 'm', 'el']);
+	if (fn) {
+		return;
+	}
+
+	// run after signals and methods are set up for this element
+	queueMicrotask(() => callExpression(fn, initAttr, el, [signals, methods, el]));
 };
 
 function bindDirectives(root) {
