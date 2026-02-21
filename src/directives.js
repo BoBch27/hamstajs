@@ -29,6 +29,10 @@ function initSignals(el) {
 	const signalsAttr = 'h-signals';
 
 	const expr = el.getAttribute(signalsAttr);
+	if (expr === null) {
+		return;
+	}
+
 	const fn = parseExpression(`return ${expr}`, signalsAttr, el, []);
 	if (!fn) {
 		return;
@@ -59,11 +63,11 @@ function initSignals(el) {
 function initMethods(el) {
 	const methodsAttr = 'h-methods';
 
-	if (!el.hasAttribute(methodsAttr)) {
+	const expr = el.getAttribute(methodsAttr);
+	if (expr === null) {
 		return;
 	}
 
-	const expr = el.getAttribute(methodsAttr);
 	const fn = parseExpression(`return ${expr}`, methodsAttr, el, ['s']);
 	if (!fn) {
 		return;
