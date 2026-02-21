@@ -5,7 +5,7 @@ export const methods = {};
 const cleanup = new Map(); // element: [disposers]
 
 export function init(root = document.body) {
-	root.querySelectorAll('[h-signals]').forEach(el => {
+	[root, ...root.querySelectorAll('[h-signals]')].forEach(el => {
 		initSignals(el); // h-signals
 		initMethods(el); // h-methods - only allowed on same element as h-signals
 		execInitCode(el); // h-init - only allowed on same element as h-signals
@@ -111,7 +111,7 @@ function execInitCode(el) {
 };
 
 function bindDirectives(root) {
-	root.querySelectorAll('*').forEach(el => {
+	[root, ...root.querySelectorAll('*')].forEach(el => {
 		for (const attr of el.attributes) {
 			if (!attr.name.startsWith(`h-`) || attr.name === 'h-signals' ||
 				attr.name === 'h-transition-enter' || attr.name === 'h-transition-leave') {
